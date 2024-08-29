@@ -518,6 +518,11 @@ pub fn main() !void {
     const ascii_img = try allocator.alloc(u8, out_w * out_h * 3);
     defer allocator.free(ascii_img);
 
+    const file = try std.fs.cwd().createFile("lynx.txt", .{});
+    defer file.close();
+
+    const writer = file.writer();
+
     @memset(ascii_img, 0);
 
     // Process each 8x8 block
@@ -584,6 +589,13 @@ pub fn main() !void {
                 ascii_char = if (avg_brightness < 32) ' ' else ASCII_CHARS[(avg_brightness * ASCII_CHARS.len) / 256];
             }
 
+            //ascii_txt[y * out_h + x * out_w] = ascii_char;
+            if (x == out_w - 1) {
+                std.debug.print("\n", .{});
+            }
+
+            try writer.writeByte(ascii_char);
+
             // Calculate average color only if args.color is true
             var avg_color: [3]u8 = undefined;
             if (args.color) {
@@ -599,6 +611,7 @@ pub fn main() !void {
             // Draw ASCII character in the output image
             convertToAscii(ascii_img, out_w, out_h, x, y, ascii_char, avg_color);
         }
+        try writer.writeByte('\n');
     }
 
     const save_result = stb.stbi_write_png(
